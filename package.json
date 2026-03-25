@@ -1,0 +1,16 @@
+{
+  "name": "deutschmeister",
+  "version": "2.0.0",
+  "description": "Assistant pédagogique IA pour l'allemand au lycée — export Word et PDF",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0",
+    "docx": "^9.5.3"
+  },
+  "engines": { "node": ">=18.0.0" }
+}

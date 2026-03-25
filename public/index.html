@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeutschMeister</title>
+<style>
+:root {
+  --bg:#f8f9fb; --surface:#fff; --surface2:#f1f3f8; --border:#e2e6ef;
+  --accent:#2563eb; --accent-d:#1d4ed8; --accent-l:#eff6ff;
+  --green:#16a34a; --green-l:#f0fdf4;
+  --gold:#d97706; --gold-l:#fffbeb;
+  --muted:#6b7280; --text:#111827;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+
+/* NAV */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{font-size:19px;font-weight:800;display:flex;align-items:center;gap:8px}
+.nav-tabs{display:flex;gap:3px;background:var(--surface2);border-radius:8px;padding:3px}
+.nav-tab{padding:6px 15px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;
+  border:none;background:transparent;color:var(--muted);transition:all .15s}
+.nav-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+/* SCREENS */
+.screen{display:none}.screen.active{display:block}
+.container{max-width:880px;margin:0 auto;padding:28px 20px}
+
+/* HERO */
+.hero{text-align:center;padding:48px 0 36px}
+.hero h1{font-size:34px;font-weight:800;margin-bottom:10px}
+.hero p{color:var(--muted);font-size:15px;max-width:460px;margin:0 auto 32px;line-height:1.6}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:540px;margin:0 auto}
+.hero-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;
+  padding:24px;cursor:pointer;transition:all .2s;text-align:left}
+.hero-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(37,99,235,.1)}
+.hero-card .ic{font-size:26px;margin-bottom:10px}
+.hero-card h3{font-size:15px;font-weight:700;margin-bottom:5px}
+.hero-card p{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.card-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+
+/* TOOL GRID */
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px}
+.tool-btn{padding:12px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;
+  background:var(--surface);transition:all .15s;text-align:left}
+.tool-btn:hover,.tool-btn.active{border-color:var(--accent);background:var(--accent-l)}
+.tool-btn .ic{font-size:18px;margin-bottom:5px}
+.tool-btn .lbl{font-size:13px;font-weight:600;color:var(--text)}
+.tool-btn.active .lbl{color:var(--accent)}
+.tool-btn .dsc{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* CONTROLS */
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select{padding:8px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);
+  color:var(--text);font-family:var(--font);font-size:13px;cursor:pointer;outline:none}
+select:focus{border-color:var(--accent)}
+
+.btn{padding:8px 18px;border-radius:8px;font-family:var(--font);font-size:13px;font-weight:600;
+  cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent-d)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed}
+.btn-success{background:var(--green);color:#fff}.btn-success:hover{background:#15803d}
+.btn-warning{background:var(--gold);color:#fff}.btn-warning:hover{background:#b45309}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-outline:hover{border-color:var(--text);color:var(--text)}
+
+/* FORMAT TOGGLE */
+.fmt-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:10px 14px;background:var(--surface2);border-radius:10px;margin-bottom:14px}
+.fmt-label{font-size:12px;color:var(--muted);font-weight:500;white-space:nowrap}
+.fmt-toggle{display:flex;border-radius:8px;border:1px solid var(--border);overflow:hidden}
+.fmt-btn{padding:7px 16px;font-family:var(--font);font-size:12px;font-weight:600;
+  cursor:pointer;border:none;background:var(--surface);color:var(--muted);
+  transition:all .15s;display:flex;align-items:center;gap:6px}
+.fmt-btn:hover{background:var(--surface2);color:var(--text)}
+.fmt-btn.active{background:var(--text);color:var(--surface)}
+.fmt-btn+.fmt-btn{border-left:1px solid var(--border)}
+.fmt-hint{font-size:11px;color:var(--muted)}
+
+/* OUTPUT */
+.output-wrap{display:none}
+.output-area{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:22px;min-height:260px;font-size:14px;line-height:1.75;white-space:pre-wrap;color:var(--text)}
+.output-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.loader{display:none;align-items:center;justify-content:center;gap:8px;padding:40px 0}
+.loader.on{display:flex}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:bop .8s infinite}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes bop{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+.streaming::after{content:'▋';animation:blink .7s infinite;color:var(--accent)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* CUSTOM INPUT */
+.custom-row{display:flex;gap:8px;margin-top:12px}
+textarea.ci{flex:1;padding:10px 13px;border:1px solid var(--border);border-radius:8px;
+  font-family:var(--font);font-size:13px;resize:none;outline:none;min-height:44px}
+textarea.ci:focus{border-color:var(--accent)}
+
+/* ELEVE */
+.level-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.level-btn{padding:12px 8px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;
+  text-align:center;background:var(--surface);transition:all .15s}
+.level-btn:hover{border-color:var(--accent)}
+.lc{font-size:15px;font-weight:800;margin-bottom:3px}
+.ln{font-size:11px;color:var(--muted)}
+.l-a1 .lc{color:#dc2626}.l-a2 .lc{color:#d97706}.l-b1 .lc{color:#16a34a}.l-b2 .lc{color:var(--accent)}
+.l-a1.active{border-color:#dc2626;background:#fef2f2}
+.l-a2.active{border-color:#d97706;background:#fffbeb}
+.l-b1.active{border-color:#16a34a;background:#f0fdf4}
+.l-b2.active{border-color:var(--accent);background:var(--accent-l)}
+.mode-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.mode-btn{padding:6px 13px;border:1px solid var(--border);border-radius:20px;
+  font-size:13px;cursor:pointer;background:var(--surface);color:var(--muted);transition:all .15s}
+.mode-btn:hover{color:var(--text);border-color:var(--text)}
+.mode-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{padding:5px 12px;border:1px solid var(--border);border-radius:20px;
+  font-size:12px;color:var(--muted);cursor:pointer;background:var(--surface);transition:all .12s}
+.chip:hover{color:var(--text);border-color:var(--text)}
+.chat-wrap{display:flex;flex-direction:column;gap:12px;margin-bottom:14px;max-height:380px;overflow-y:auto}
+.chat-wrap::-webkit-scrollbar{width:4px}
+.chat-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.msg{display:flex;gap:9px;max-width:80%}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;background:var(--accent-l);color:var(--accent)}
+.msg.user .av{background:#f5f3ff;color:#7c3aed}
+.bubble{background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+  padding:9px 13px;font-size:14px;line-height:1.6}
+.msg.user .bubble{background:var(--accent-l);border-color:#bfdbfe}
+.chat-row{display:flex;gap:8px}
+.chat-in{flex:1;padding:10px 13px;border:1px solid var(--border);border-radius:10px;
+  font-family:var(--font);font-size:14px;outline:none;resize:none;min-height:42px}
+.chat-in:focus{border-color:var(--accent)}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;padding:11px 18px;background:var(--text);color:#fff;
+  border-radius:10px;font-size:14px;font-weight:500;transform:translateY(80px);
+  transition:transform .3s;z-index:999;pointer-events:none}
+.toast.show{transform:translateY(0)}
+
+@media(max-width:600px){
+  .hero h1{font-size:26px}.hero-grid{grid-template-columns:1fr}
+  .level-grid{grid-template-columns:repeat(2,1fr)}.tool-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="logo">🇩🇪 DeutschMeister</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="goTo('home')">Accueil</button>
+    <button class="nav-tab" onclick="goTo('prof')">Professeur</button>
+    <button class="nav-tab" onclick="goTo('eleve')">Élève</button>
+  </div>
+</nav>
+
+<!-- HOME -->
+<div id="s-home" class="screen active">
+  <div class="container">
+    <div class="hero">
+      <h1>🇩🇪 DeutschMeister</h1>
+      <p>Assistant pédagogique IA pour l'enseignement de l'allemand — adapté au lycée français.</p>
+      <div class="hero-grid">
+        <div class="hero-card" onclick="goTo('prof')">
+          <div class="ic">👩‍🏫</div>
+          <h3>Espace Professeur</h3>
+          <p>Générez cours, interrogations, fiches et corrigés. Export Word modifiable ou PDF imprimable.</p>
+        </div>
+        <div class="hero-card" onclick="goTo('eleve')">
+          <div class="ic">🎒</div>
+          <h3>Espace Élève</h3>
+          <p>Tuteur IA adapté à votre niveau de A1 à B2 — conversation, vocabulaire, conjugaison.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROF -->
+<div id="s-prof" class="screen">
+  <div class="container">
+
+    <div class="card">
+      <div class="card-title">Type de ressource</div>
+      <div class="tool-grid">
+        <div class="tool-btn active" onclick="selTool(this,'interro')"><div class="ic">📝</div><div class="lbl">Interrogation</div><div class="dsc">Avec barème</div></div>
+        <div class="tool-btn" onclick="selTool(this,'cours')"><div class="ic">📖</div><div class="lbl">Fiche de cours</div><div class="dsc">Règles, tableaux</div></div>
+        <div class="tool-btn" onclick="selTool(this,'vocab')"><div class="ic">🗂</div><div class="lbl">Vocabulaire</div><div class="dsc">Listes thématiques</div></div>
+        <div class="tool-btn" onclick="selTool(this,'conjugaison')"><div class="ic">⚡</div><div class="lbl">Conjugaison</div><div class="dsc">Exercices progressifs</div></div>
+        <div class="tool-btn" onclick="selTool(this,'corrige')"><div class="ic">✅</div><div class="lbl">Corrigé type</div><div class="dsc">Avec explications</div></div>
+        <div class="tool-btn" onclick="selTool(this,'dialogue')"><div class="ic">💬</div><div class="lbl">Dialogue modèle</div><div class="dsc">Situations réelles</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Paramètres</div>
+      <div class="controls">
+        <select id="p-classe"><option>Seconde</option><option>Première</option><option>Terminale</option></select>
+        <select id="p-niveau"><option>A1</option><option selected>A2</option><option>B1</option><option>B2</option></select>
+        <select id="p-theme">
+          <option value="">Thème libre</option>
+          <option value="la famille">La famille</option>
+          <option value="l'école">L'école</option>
+          <option value="les loisirs">Les loisirs</option>
+          <option value="la ville">La ville</option>
+          <option value="l'environnement">L'environnement</option>
+          <option value="le monde du travail">Le monde du travail</option>
+          <option value="l'alimentation">L'alimentation</option>
+          <option value="les voyages">Les voyages</option>
+        </select>
+        <button class="btn btn-primary" id="gen-btn" onclick="generate()">✨ Générer</button>
+      </div>
+
+      <div class="fmt-bar" style="margin-top:14px">
+        <span class="fmt-label">Format d'export :</span>
+        <div class="fmt-toggle">
+          <button class="fmt-btn active" id="fmt-word" onclick="setFmt('word',this)">
+            <span style="font-size:15px;font-weight:900">W</span> Word (.docx)
+          </button>
+          <button class="fmt-btn" id="fmt-pdf" onclick="setFmt('pdf',this)">
+            <span style="font-size:15px;font-weight:900">P</span> PDF
+          </button>
+        </div>
+        <span class="fmt-hint">Word = modifiable dans Word / LibreOffice · PDF = prêt à imprimer</span>
+      </div>
+
+      <div class="custom-row">
+        <textarea class="ci" id="prof-custom" rows="2" placeholder="Ou demande personnalisée… Ex : fiche sur le passé composé, 8 exercices, niveau A2"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();customGen()}"></textarea>
+        <button class="btn btn-outline" onclick="customGen()">Envoyer</button>
+      </div>
+    </div>
+
+    <div class="loader" id="loader">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <span style="color:var(--muted);font-size:14px;margin-left:4px">Génération en cours…</span>
+    </div>
+
+    <div class="output-wrap" id="out-wrap">
+      <div class="output-area" id="out-area"></div>
+      <div class="output-actions">
+        <button class="btn btn-success" id="dl-btn" onclick="download()">⬇ Télécharger</button>
+        <button class="btn btn-outline" onclick="copyOut()">📋 Copier</button>
+        <button class="btn btn-outline" onclick="generate()">🔄 Régénérer</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ELEVE -->
+<div id="s-eleve" class="screen">
+  <div class="container">
+    <div class="card">
+      <div class="card-title">Mon niveau</div>
+      <div class="level-grid">
+        <div class="level-btn l-a1" onclick="selLvl(this,'A1')"><div class="lc">A1</div><div class="ln">Débutant</div></div>
+        <div class="level-btn l-a2 active" onclick="selLvl(this,'A2')"><div class="lc">A2</div><div class="ln">Élémentaire</div></div>
+        <div class="level-btn l-b1" onclick="selLvl(this,'B1')"><div class="lc">B1</div><div class="ln">Intermédiaire</div></div>
+        <div class="level-btn l-b2" onclick="selLvl(this,'B2')"><div class="lc">B2</div><div class="ln">Avancé</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px">Mode</div>
+      <div class="mode-grid">
+        <div class="mode-btn active" onclick="selMode(this,'conversation')">💬 Conversation</div>
+        <div class="mode-btn" onclick="selMode(this,'vocabulaire')">📚 Vocabulaire</div>
+        <div class="mode-btn" onclick="selMode(this,'conjugaison')">⚡ Conjugaison</div>
+        <div class="mode-btn" onclick="selMode(this,'correction')">🔍 Correction</div>
+        <div class="mode-btn" onclick="selMode(this,'exercice')">🎯 Exercice</div>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="chat-wrap" id="chat"></div>
+      <div class="chat-row">
+        <textarea class="chat-in" id="chat-in" rows="2" placeholder="Écris en allemand ou pose une question en français…"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+        <button class="btn btn-primary" onclick="sendChat()">Envoyer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = window.location.hostname==='localhost'?'http://localhost:3000':'';
+let tool='interro', level='A2', mode='conversation', fmt='word';
+let lastContent='', lastMeta={}, history=[], busy=false;
+
+const toolDesc={
+  interro:'une interrogation écrite (avec barème, 4-5 exercices variés, durée 30-45 min)',
+  cours:'une fiche de cours complète (règles, exemples, tableaux)',
+  vocab:'une fiche de vocabulaire thématique (avec genre, phonétique, exemples)',
+  conjugaison:'un exercice de conjugaison progressif (règles + exercices + corrigé)',
+  corrige:'un corrigé type détaillé (avec explications grammaticales)',
+  dialogue:'un dialogue modèle naturel (avec vocabulaire utile et variantes)',
+};
+const chips={
+  A1:['Dire bonjour','Les chiffres 1–10','Me présenter','Les couleurs'],
+  A2:['Parler de ma famille','Vocabulaire de l\'école','Haben et sein','Ma journée'],
+  B1:['Raconter au passé','Exprimer mon opinion','Le subjonctif II','Vocabulaire pro'],
+  B2:['Nuances du subjonctif','Registres de langue','Analyser un texte','Expressions idiomatiques'],
+};
+const lvlInstr={
+  A1:'Parle TOUJOURS en français sauf pour les mots/phrases enseignés. Ultra simple, très encourageant.',
+  A2:'Mélange français (60%) et allemand simple (40%). Traduis les mots nouveaux.',
+  B1:'Communique davantage en allemand (50/50). Explications grammaticales en français.',
+  B2:'Communique principalement en allemand. Explications en allemand sauf points complexes.',
+};
+const modeInstr={
+  conversation:'Mode conversation : engage une conversation naturelle adaptée au niveau.',
+  vocabulaire:'Mode vocabulaire : propose des mots avec traductions et exercices de mémorisation.',
+  conjugaison:'Mode conjugaison : explique les temps et fais des exercices de conjugaison.',
+  correction:'Mode correction : corrige le texte en détail avec explications grammaticales.',
+  exercice:'Mode exercice : crée un exercice interactif adapté au niveau avec corrigé.',
+};
+
+function goTo(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-'+name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',['home','prof','eleve'][i]===name));
+}
+function selTool(el,t){document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');tool=t;}
+function selLvl(el,l){document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');level=l;updateChips();resetChat();}
+function selMode(el,m){document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');mode=m;}
+function setFmt(f,btn){fmt=f;document.querySelectorAll('.fmt-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');updateDlBtn();}
+function updateDlBtn(){const b=document.getElementById('dl-btn');b.textContent=fmt==='word'?'⬇ Télécharger Word (.docx)':'⬇ Télécharger PDF';}
+function updateChips(){const c=document.getElementById('chips');c.innerHTML=(chips[level]||chips.A2).map(t=>`<span class="chip" onclick="useChip('${t}')">${t}</span>`).join('');}
+function useChip(t){document.getElementById('chat-in').value=t;sendChat();}
+function toast(msg,d=2400){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),d);}
+function copyOut(){navigator.clipboard.writeText(lastContent).then(()=>toast('✅ Copié !'));}
+
+async function callGenerate(system,user){
+  const loader=document.getElementById('loader'),wrap=document.getElementById('out-wrap'),
+        area=document.getElementById('out-area'),btn=document.getElementById('gen-btn');
+  loader.classList.add('on');wrap.style.display='none';btn.disabled=true;busy=true;
+  lastContent='';
+  try{
+    const r=await fetch(`${API}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system,user,max_tokens:2500})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||`Erreur ${r.status}`);}
+    const d=await r.json();lastContent=d.content||'';
+    loader.classList.remove('on');wrap.style.display='block';
+    area.classList.add('streaming');area.textContent='';
+    let i=0;const chars=lastContent.split('');
+    const iv=setInterval(()=>{area.textContent+=chars[i++]||'';if(i>=chars.length){clearInterval(iv);area.classList.remove('streaming');}},6);
+  }catch(e){
+    loader.classList.remove('on');wrap.style.display='block';
+    area.textContent='❌ Erreur : '+e.message+'\n\nVérifiez que le serveur est démarré et que ANTHROPIC_API_KEY est définie.';
+  }finally{btn.disabled=false;busy=false;}
+}
+
+function generate(){
+  const classe=document.getElementById('p-classe').value;
+  const niveau=document.getElementById('p-niveau').value;
+  const theme=document.getElementById('p-theme').value;
+  lastMeta={tool,classe,niveau,theme};
+  const sys=`Tu es un professeur d'allemand expert dans le système scolaire français. Tu crées des ressources pédagogiques de haute qualité, adaptées aux programmes officiels (CECRL). Réponds en français sauf pour les exemples en allemand.`;
+  const usr=`Génère ${toolDesc[tool]||tool}${theme?` sur le thème "${theme}"`:''} pour une classe de ${classe}, niveau ${niveau} du CECRL. Ressource directement utilisable en classe, bien structurée, complète.`;
+  callGenerate(sys,usr);
+}
+
+function customGen(){
+  const val=document.getElementById('prof-custom').value.trim();if(!val)return;
+  document.getElementById('prof-custom').value='';
+  lastMeta={tool:'ressource',classe:'Lycée',niveau:'A2',theme:''};
+  callGenerate(`Tu es un professeur d'allemand expert dans le système scolaire français. Réponds en français sauf pour les exemples en allemand.`,val);
+}
+
+async function download(){
+  if(!lastContent){toast('❌ Rien à télécharger');return;}
+  const btn=document.getElementById('dl-btn');
+  btn.disabled=true;btn.textContent='⏳ Génération…';
+  const endpoint=fmt==='word'?'/api/docx':'/api/pdf';
+  const ext=fmt==='word'?'docx':'pdf';
+  try{
+    const r=await fetch(`${API}${endpoint}`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({content:lastContent,meta:lastMeta})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||`Erreur ${r.status}`);}
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;
+    const{tool:t,classe:cl,niveau:nv,theme:th}=lastMeta;
+    a.download=`${t||'ressource'}_${nv}_${cl}${th?'_'+th:''}.${ext}`.replace(/[^a-z0-9_.-]/gi,'_');
+    a.click();URL.revokeObjectURL(url);
+    toast(`✅ ${ext.toUpperCase()} téléchargé !`);
+  }catch(e){toast('❌ Erreur : '+e.message);}
+  finally{btn.disabled=false;updateDlBtn();}
+}
+
+// ── ÉLÈVE CHAT ────────────────────────────────────────────────────
+function appendMsg(role,html){
+  const c=document.getElementById('chat');
+  const d=document.createElement('div');
+  d.className='msg'+(role==='user'?' user':'');
+  d.innerHTML=`<div class="av">${role==='ai'?'🤖':'👤'}</div><div class="bubble">${html}</div>`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+  return d.querySelector('.bubble');
+}
+
+function resetChat(){
+  history=[];document.getElementById('chat').innerHTML='';
+  const w={A1:'Hallo! 👋 Je suis ton tuteur d\'allemand. Tu débutes — j\'explique tout en français. Qu\'est-ce qu\'on commence ?',
+    A2:'Hallo! 🎓 Niveau A2 — on consolide les bases. J\'expliquerai en français si besoin. Que veux-tu pratiquer ?',
+    B1:'Hallo! 😊 Niveau B1 — on travaille ta fluidité. Was möchtest du heute üben?',
+    B2:'Hallo! 🎯 Niveau B2 — on communique principalement en allemand. Womit sollen wir beginnen?'};
+  appendMsg('ai',w[level]||w.A2);
+}
+
+async function sendChat(){
+  if(busy)return;
+  const inp=document.getElementById('chat-in');
+  const txt=inp.value.trim();if(!txt)return;
+  inp.value='';busy=true;
+  appendMsg('user',txt);
+  history.push({role:'user',content:txt});
+  const bubble=appendMsg('ai','…');
+  bubble.classList.add('streaming');bubble.textContent='';
+  const sys=`Tu es DeutschMeister, tuteur d'allemand bienveillant pour lycéens français. Niveau : ${level}. ${lvlInstr[level]} ${modeInstr[mode]} Corrige toujours les erreurs avec une courte explication. Sois concis et positif.`;
+  try{
+    const r=await fetch(`${API}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system:sys,messages:history.slice(-12),max_tokens:600})});
+    if(!r.ok)throw new Error('Erreur serveur');
+    const d=await r.json();const reply=d.content||'Désolé, je n\'ai pas pu répondre.';
+    history.push({role:'assistant',content:reply});
+    bubble.classList.remove('streaming');
+    let i=0;const chars=reply.split('');
+    const iv=setInterval(()=>{
+      bubble.innerHTML=reply.slice(0,i).replace(/\n/g,'<br>');i++;
+      if(i>chars.length)clearInterval(iv);
+      document.getElementById('chat').scrollTop=99999;
+    },14);
+  }catch(e){bubble.classList.remove('streaming');bubble.textContent='❌ Erreur de connexion.';}
+  finally{busy=false;}
+}
+
+// Init
+updateChips();resetChat();updateDlBtn();
+</script>
+</body>
+</html>
