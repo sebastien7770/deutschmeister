@@ -14,6 +14,36 @@ const execAsync  = promisify(execFile);
 const anthropic  = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const PORT       = process.env.PORT || 3000;
 
+// ── Auth ──────────────────────────────────────────────────────────
+const sessions   = new Map();
+const SESSION_TTL = 8 * 60 * 60 * 1000; // 8 h
+
+const USERS = {
+  [process.env.PROF_USER  || 'prof']:  { pass: process.env.PROF_PASS  || 'prof',  role: 'prof' },
+  [process.env.ELEVE_USER || 'eleve']: { pass: process.env.ELEVE_PASS || 'eleve', role: 'eleve' },
+};
+
+function authenticate(req) {
+  const auth = req.headers['authorization'];
+  if (!auth?.startsWith('Bearer ')) return null;
+  const token = auth.slice(7);
+  const session = sessions.get(token);
+  if (!session) return null;
+  if (Date.now() - session.createdAt > SESSION_TTL) {
+    sessions.delete(token);
+    return null;
+  }
+  return session;
+}
+
+// Nettoyage périodique des sessions expirées
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, s] of sessions) {
+    if (now - s.createdAt > SESSION_TTL) sessions.delete(token);
+  }
+}, 30 * 60 * 1000);
+
 // ── MIME types ────────────────────────────────────────────────────
 const MIME = {
   html: 'text/html; charset=utf-8',
@@ -29,7 +59,7 @@ const MIME = {
 function cors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
 function sendJSON(res, data, status = 200) {
@@ -57,6 +87,30 @@ function serveStatic(req, res) {
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'text/plain' });
     res.end(readFileSync(path));
   } catch { res.writeHead(404); res.end('Not found'); }
+}
+
+// ── /api/login ───────────────────────────────────────────────────
+async function handleLogin(req, res) {
+  const { username, password } = await readBody(req);
+  const entry = USERS[username];
+  if (!entry || entry.pass !== password) {
+    return sendJSON(res, { error: 'Identifiants incorrects' }, 401);
+  }
+  const token = randomUUID();
+  sessions.set(token, { role: entry.role, createdAt: Date.now() });
+  sendJSON(res, { token, role: entry.role });
+}
+
+function handleMe(req, res) {
+  const session = authenticate(req);
+  if (!session) return sendJSON(res, { error: 'Non autorisé' }, 401);
+  sendJSON(res, { role: session.role });
+}
+
+function handleLogout(req, res) {
+  const auth = req.headers['authorization'];
+  if (auth?.startsWith('Bearer ')) sessions.delete(auth.slice(7));
+  sendJSON(res, { ok: true });
 }
 
 // ── /api/generate — Anthropic ────────────────────────────────────
@@ -159,6 +213,16 @@ async function handlePdf(req, res) {
 const server = createServer(async (req, res) => {
   if (req.method === 'OPTIONS') { cors(res); res.writeHead(204); res.end(); return; }
   try {
+    // Routes publiques (auth)
+    if (req.method === 'POST' && req.url === '/api/login')  return await handleLogin(req, res);
+    if (req.method === 'GET'  && req.url === '/api/me')     return handleMe(req, res);
+    if (req.method === 'POST' && req.url === '/api/logout') return handleLogout(req, res);
+
+    // Routes protégées
+    if (req.url.startsWith('/api/')) {
+      if (!authenticate(req)) return sendJSON(res, { error: 'Non autorisé' }, 401);
+    }
+
     if (req.method === 'POST' && req.url === '/api/generate') return await handleGenerate(req, res);
     if (req.method === 'POST' && req.url === '/api/docx')     return await handleDocx(req, res);
     if (req.method === 'POST' && req.url === '/api/pdf')      return await handlePdf(req, res);

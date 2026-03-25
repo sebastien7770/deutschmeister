@@ -25,6 +25,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   border:none;background:transparent;color:var(--muted);transition:all .15s}
 .nav-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 
+/* LOGIN */
+.login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px 32px;
+  width:100%;max-width:360px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.login-card h1{font-size:26px;font-weight:800;margin-bottom:6px}
+.login-card p{color:var(--muted);font-size:13px;margin-bottom:24px}
+.login-card input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:14px;font-family:var(--font);margin-bottom:12px;outline:none;transition:border .15s}
+.login-card input:focus{border-color:var(--accent)}
+.login-card .btn{width:100%;margin-top:4px}
+.login-error{color:#dc2626;font-size:13px;margin-top:12px;display:none}
+
 /* SCREENS */
 .screen{display:none}.screen.active{display:block}
 .container{max-width:880px;margin:0 auto;padding:28px 20px}
@@ -153,17 +165,34 @@ textarea.ci:focus{border-color:var(--accent)}
 </head>
 <body>
 
-<nav class="nav">
+<nav class="nav" id="main-nav" style="display:none">
   <div class="logo">🇩🇪 DeutschMeister</div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="goTo('home')">Accueil</button>
-    <button class="nav-tab" onclick="goTo('prof')">Professeur</button>
-    <button class="nav-tab" onclick="goTo('eleve')">Élève</button>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="nav-tabs" id="nav-tabs">
+      <button class="nav-tab" data-tab="home" onclick="goTo('home')">Accueil</button>
+      <button class="nav-tab" data-tab="prof" onclick="goTo('prof')">Professeur</button>
+      <button class="nav-tab" data-tab="eleve" onclick="goTo('eleve')">Élève</button>
+    </div>
+    <button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="logout()">Déconnexion</button>
   </div>
 </nav>
 
+<!-- LOGIN -->
+<div id="s-login" class="login-screen">
+  <div class="login-card">
+    <h1>🇩🇪 DeutschMeister</h1>
+    <p>Connectez-vous pour accéder à l'application</p>
+    <input type="text" id="login-user" placeholder="Identifiant" autocomplete="username"
+      onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+    <input type="password" id="login-pass" placeholder="Mot de passe" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')login()">
+    <button class="btn btn-primary" onclick="login()">Se connecter</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
 <!-- HOME -->
-<div id="s-home" class="screen active">
+<div id="s-home" class="screen">
   <div class="container">
     <div class="hero">
       <h1>🇩🇪 DeutschMeister</h1>
@@ -294,6 +323,60 @@ textarea.ci:focus{border-color:var(--accent)}
 const API = window.location.hostname==='localhost'?'http://localhost:3000':'';
 let tool='interro', level='A2', mode='conversation', fmt='word';
 let lastContent='', lastMeta={}, history=[], busy=false;
+let authToken = sessionStorage.getItem('dm_token');
+let userRole  = sessionStorage.getItem('dm_role');
+
+// ── Auth ───────────────────────────────────────────────────────
+function authFetch(url, options = {}) {
+  options.headers = { ...options.headers, 'Authorization': 'Bearer ' + authToken };
+  return fetch(url, options);
+}
+
+async function login() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const err  = document.getElementById('login-error');
+  err.style.display = 'none';
+  if (!user || !pass) { err.textContent = 'Veuillez remplir tous les champs.'; err.style.display = 'block'; return; }
+  try {
+    const r = await fetch(`${API}/api/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, password: pass }) });
+    const d = await r.json();
+    if (!r.ok) { err.textContent = d.error || 'Erreur de connexion'; err.style.display = 'block'; return; }
+    authToken = d.token; userRole = d.role;
+    sessionStorage.setItem('dm_token', authToken);
+    sessionStorage.setItem('dm_role', userRole);
+    onLoginSuccess();
+  } catch (e) { err.textContent = 'Impossible de contacter le serveur.'; err.style.display = 'block'; }
+}
+
+function onLoginSuccess() {
+  document.getElementById('s-login').style.display = 'none';
+  document.getElementById('main-nav').style.display = '';
+  // Filtrer les onglets selon le rôle
+  document.querySelectorAll('#nav-tabs .nav-tab').forEach(tab => {
+    const t = tab.dataset.tab;
+    if (t === 'home') { tab.style.display = 'none'; return; }
+    tab.style.display = (t === userRole) ? '' : 'none';
+  });
+  goTo(userRole);
+}
+
+async function logout() {
+  try { await authFetch(`${API}/api/logout`, { method: 'POST' }); } catch {}
+  sessionStorage.removeItem('dm_token');
+  sessionStorage.removeItem('dm_role');
+  location.reload();
+}
+
+async function checkSession() {
+  if (!authToken) return;
+  try {
+    const r = await authFetch(`${API}/api/me`);
+    if (r.ok) { const d = await r.json(); userRole = d.role; onLoginSuccess(); }
+    else { sessionStorage.removeItem('dm_token'); sessionStorage.removeItem('dm_role'); authToken = null; }
+  } catch { authToken = null; }
+}
 
 const toolDesc={
   interro:'une interrogation écrite (avec barème, 4-5 exercices variés, durée 30-45 min)',
@@ -326,7 +409,7 @@ const modeInstr={
 function goTo(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('s-'+name).classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',['home','prof','eleve'][i]===name));
+  document.querySelectorAll('#nav-tabs .nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
 }
 function selTool(el,t){document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');tool=t;}
 function selLvl(el,l){document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');level=l;updateChips();resetChat();}
@@ -344,7 +427,7 @@ async function callGenerate(system,user){
   loader.classList.add('on');wrap.style.display='none';btn.disabled=true;busy=true;
   lastContent='';
   try{
-    const r=await fetch(`${API}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await authFetch(`${API}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({system,user,max_tokens:2500})});
     if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||`Erreur ${r.status}`);}
     const d=await r.json();lastContent=d.content||'';
@@ -382,7 +465,7 @@ async function download(){
   const endpoint=fmt==='word'?'/api/docx':'/api/pdf';
   const ext=fmt==='word'?'docx':'pdf';
   try{
-    const r=await fetch(`${API}${endpoint}`,{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await authFetch(`${API}${endpoint}`,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({content:lastContent,meta:lastMeta})});
     if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||`Erreur ${r.status}`);}
     const blob=await r.blob();
@@ -426,7 +509,7 @@ async function sendChat(){
   bubble.classList.add('streaming');bubble.textContent='';
   const sys=`Tu es DeutschMeister, tuteur d'allemand bienveillant pour lycéens français. Niveau : ${level}. ${lvlInstr[level]} ${modeInstr[mode]} Corrige toujours les erreurs avec une courte explication. Sois concis et positif.`;
   try{
-    const r=await fetch(`${API}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await authFetch(`${API}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({system:sys,messages:history.slice(-12),max_tokens:600})});
     if(!r.ok)throw new Error('Erreur serveur');
     const d=await r.json();const reply=d.content||'Désolé, je n\'ai pas pu répondre.';
@@ -444,6 +527,7 @@ async function sendChat(){
 
 // Init
 updateChips();resetChat();updateDlBtn();
+checkSession();
 </script>
 </body>
 </html>
